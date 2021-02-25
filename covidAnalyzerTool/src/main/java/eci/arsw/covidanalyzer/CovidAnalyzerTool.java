@@ -22,8 +22,14 @@ public class CovidAnalyzerTool {
     private TestReader testReader;
     private int amountOfFilesTotal;
     private AtomicInteger amountOfFilesProcessed;
+    private boolean stop;
+    private int numberThread = 5;
+    private ArrayList<CovidThread> threads;
 
     public CovidAnalyzerTool() {
+        amountOfFilesTotal = 0;
+        stop = false;
+        threads = new ArrayList<>();
         resultAnalyzer = new ResultAnalyzer();
         testReader = new TestReader();
         amountOfFilesProcessed = new AtomicInteger();
@@ -33,12 +39,15 @@ public class CovidAnalyzerTool {
         amountOfFilesProcessed.set(0);
         List<File> resultFiles = getResultFileList();
         amountOfFilesTotal = resultFiles.size();
-        for (File resultFile : resultFiles) {
-            List<Result> results = testReader.readResultsFromFile(resultFile);
-            for (Result result : results) {
-                resultAnalyzer.addResult(result);
+        int range = amountOfFilesTotal/numberThread;
+
+        for (int i = 0; i < numberThread; i++){
+            if( i != numberThread -1){
+                threads.add(new CovidThread(resultFiles,resultAnalyzer,amountOfFilesProcessed,testReader, range * i, (range * i)+ range - 1));
+            }else {
+                threads.add(new CovidThread(resultFiles,resultAnalyzer,amountOfFilesProcessed,testReader, range * i, amountOfFilesTotal - 1));
             }
-            amountOfFilesProcessed.incrementAndGet();
+            threads.get(threads.size()-1).start();
         }
     }
 
