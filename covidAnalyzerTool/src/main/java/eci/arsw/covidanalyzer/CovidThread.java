@@ -29,11 +29,22 @@ public class CovidThread extends Thread {
 
     public void resumeFunction(){
         stop = false;
-        notifyAll();
+        synchronized (this) {
+            notifyAll();
+        }
     }
     public void run(){
         for (int i = min; i <= max; i++) {
-            System.out.println(i);
+            //System.out.println(i);
+            synchronized (this){
+                while (stop){
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             List<Result> results = testReader.readResultsFromFile(resultFile.get(i));
             for (Result result : results) {
                 resultAnalyzer.addResult(result);

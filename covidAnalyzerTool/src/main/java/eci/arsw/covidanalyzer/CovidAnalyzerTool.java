@@ -22,13 +22,13 @@ public class CovidAnalyzerTool {
     private TestReader testReader;
     private int amountOfFilesTotal;
     private AtomicInteger amountOfFilesProcessed;
-    private boolean stop;
+    private static boolean pause;
     private int numberThread = 5;
-    private ArrayList<CovidThread> threads;
+    private static ArrayList<CovidThread> threads;
 
     public CovidAnalyzerTool() {
         amountOfFilesTotal = 0;
-        stop = false;
+        pause = false;
         threads = new ArrayList<>();
         resultAnalyzer = new ResultAnalyzer();
         testReader = new TestReader();
@@ -76,13 +76,38 @@ public class CovidAnalyzerTool {
         while (true) {
             Scanner scanner = new Scanner(System.in);
             String line = scanner.nextLine();
-            if (line.contains("exit"))
+            if (line.contains("exit")) {
                 break;
-            String message = "Processed %d out of %d files.\nFound %d positive people:\n%s";
-            Set<Result> positivePeople = covidAnalyzerTool.getPositivePeople();
-            String affectedPeople = positivePeople.stream().map(Result::toString).reduce("", (s1, s2) -> s1 + "\n" + s2);
-            message = String.format(message, covidAnalyzerTool.amountOfFilesProcessed.get(), covidAnalyzerTool.amountOfFilesTotal, positivePeople.size(), affectedPeople);
-            System.out.println(message);
+            }else if (line.isEmpty()){
+                if(!pause){
+                    pauseThread();
+                    String message = "Processed %d out of %d files.\nFound %d positive people:\n%s";
+                    Set<Result> positivePeople = covidAnalyzerTool.getPositivePeople();
+                    String affectedPeople = positivePeople.stream().map(Result::toString).reduce("", (s1, s2) -> s1 + "\n" + s2);
+                    message = String.format(message, covidAnalyzerTool.amountOfFilesProcessed.get(), covidAnalyzerTool.amountOfFilesTotal, positivePeople.size(), affectedPeople);
+                    System.out.println(message);
+                }else{
+                    resumeThread();
+                }
+
+            }
+
+        }
+    }
+
+    private static void pauseThread() {
+        System.out.println("----pauseThread");
+        pause = true;
+        for(CovidThread thread: threads){
+            thread.stopFunction();
+        }
+    }
+
+    private static void resumeThread() {
+        System.out.println("----resumeThread");
+        pause = false;
+        for(CovidThread thread: threads){
+            thread.resumeFunction();
         }
     }
 
